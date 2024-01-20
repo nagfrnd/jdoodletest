@@ -20,7 +20,7 @@ def lambda_handler(event, context):
             'instanceType': 't3.micro',  
             'imageId': 'ami-0c7217cdde317cfec',
             'keyName': 'newdeploy',  
-            'securitygroup': 'sg-0447f716de2d3907c'
+            'securitygroup': 'Please update it'
         }
     )
     
