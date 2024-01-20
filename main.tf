@@ -24,7 +24,7 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-
+# ASG creation
 resource "aws_launch_configuration" "newdeploy" {
   name = "newdeploy config"
   image_id = data.aws_ami.ubuntu.id
@@ -62,7 +62,7 @@ resource "aws_autoscaling_group" "jdoodle" {
     }
   }
 }
-
+# Scale up if load reaches 75%
 resource "aws_autoscaling_policy" "scale_up" {
   name                  = "scale-up"
   scaling_adjustment    = 1
@@ -90,6 +90,7 @@ resource "aws_cloudwatch_metric_alarm" "scaleup_alarm" {
   alarm_actions     = [aws_autoscaling_policy.scale_up.arn]
 }
 
+# Scale down if the load drops to 50%
 resource "aws_autoscaling_policy" "scale_down" {
   name                   = "scale-down"
   scaling_adjustment    = -1
