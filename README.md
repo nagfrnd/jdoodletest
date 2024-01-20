@@ -13,3 +13,4 @@ Things to be updated before executing the script
 3) Region in vars.tf.(at line 2)
 4) VPC in vars.tf. ( at line 6)
 5) subnets in vars.tf. (at lines 10, 14, 18)
+6) Subnet in the lambda/index.py. (at line 23)
