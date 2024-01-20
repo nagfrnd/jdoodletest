@@ -10,14 +10,10 @@ resource "aws_lambda_function" "refresh_instances" {
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   filename         = "${path.module}/lambda/refresh_instances.zip"
 
-  # environment {
-  #   AUTOSCALING_GROUP_NAME = aws_autoscaling_group.jdoodle.name
-  # }
-
   depends_on = [aws_autoscaling_group.jdoodle]
 }
 
-
+# Role for the Lambda execution
 data "aws_iam_policy_document" "lambda_role" {
   statement {
     effect = "Allow"
@@ -36,19 +32,6 @@ resource "aws_iam_role" "lambda_exec" {
   assume_role_policy = data.aws_iam_policy_document.lambda_role.json
 }
 
-# resource "aws_iam_role" "lambda_exec" {
-#   name = "lambda-exec-role"
-
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17",
-#     Statement = [{
-#       Action = "sts:AssumeRole",
-#       Effect = "Allow",
-#       Principal = { Service = "lambda.amazonaws.com" },
-#     }],
-#   })
-# }
-
 data "aws_iam_policy_document" "lambda_role1" {
   statement {
     effect = "Allow"
@@ -66,19 +49,6 @@ resource "aws_iam_role" "lambda_execution_role" {
   name               = "lambda-execution-role"
   assume_role_policy = data.aws_iam_policy_document.lambda_role1.json
 }
-# resource "aws_iam_role" "lambda_execution_role" {
-#   name = "lambda-execution-role"
-
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17",
-#     Statement = [{
-#       Action = "sts:AssumeRole",
-#       Effect = "Allow",
-#       Principal = { Service = "lambda.amazonaws.com" },
-#     }],
-#   })
-# }
-
 
 data "aws_iam_policy_document" "lambda_execution_policy_doc" {
   statement {
@@ -101,34 +71,12 @@ resource "aws_iam_policy" "lambda_execution_policy" {
   policy      = data.aws_iam_policy_document.lambda_execution_policy_doc.json
 }
 
-# resource "aws_iam_role_policy" "lambda_execution_policy" {
-#   name        = "lambda-execution-policy"
-#   role        = aws_iam_role.lambda_execution_role.id
-
-#   policy = jsonencode({
-#     Version = "2012-10-17",
-#     Statement = [
-#       {
-#         Effect = "Allow",
-#         Action = [
-#           "autoscaling:DescribeAutoScalingGroups",
-#           "autoscaling:UpdateAutoScalingGroup",
-#           "ec2:DescribeInstances",
-#           "ec2:CreateLaunchTemplate",
-#           "ec2:DescribeLaunchTemplates",
-#         ],
-#         Resource = "*",
-#       },
-#     ],
-#   })
-# }
-
-
 resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
   role       = aws_iam_role.lambda_execution_role.name
   policy_arn = aws_iam_policy.lambda_execution_policy.arn
 }
 
+# Cloud watch event to trigger the refresh at 12AM UTC
 resource "aws_cloudwatch_event_rule" "daily_refresh" {
   name        = "daily-refresh"
   description = "Daily refresh of instances at 12 am UTC"
@@ -186,6 +134,7 @@ resource "aws_lambda_permission" "allow_events" {
   source_arn    = aws_cloudwatch_event_rule.daily_refresh.arn
 }
 
+# creating the SNS Topic
 resource "aws_sns_topic" "scaling_alerts" {
   name = "scaling-alerts"
 }
@@ -196,55 +145,9 @@ resource "aws_autoscaling_notification" "scaling_notification" {
   topic_arn         = aws_sns_topic.scaling_alerts.arn
 }
 
-# resource "aws_iam_role" "lambda_execution_role" {
-#   name = "lambda-execution-role"
-
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17",
-#     Statement = [{
-#       Action = "sts:AssumeRole",
-#       Effect = "Allow",
-#       Principal = { Service = "lambda.amazonaws.com" },
-#     }],
-#   })
-# }
-
-# resource "aws_iam_role_policy" "lambda_execution_policy" {
-#   name        = "lambda-execution-policy"
-#   role        = aws_iam_role.lambda_execution_role.id
-
-#   policy = jsonencode({
-#     Version = "2012-10-17",
-#     Statement = [
-#       {
-#         Effect = "Allow",
-#         Action = [
-#           "autoscaling:DescribeAutoScalingGroups",
-#           "autoscaling:UpdateAutoScalingGroup",
-#           "ec2:DescribeInstances",
-#           "ec2:CreateLaunchTemplate",
-#           "ec2:DescribeLaunchTemplates",
-#         ],
-#         Resource = "*",
-#       },
-#     ],
-#   })
-# }
-
 # ZIP archive for the Lambda function
 data "archive_file" "lambda_zip" {
   type        = "zip"
   source_dir  = "${path.module}/lambda"
   output_path = "${path.module}/lambda/refresh_instances.zip"
 }
-
-# # Lambda function code
-# resource "null_resource" "lambda_code" {
-#   triggers = {
-#     always_run = timestamp()
-#   }
-
-#   provisioner "local-exec" {
-#     command = "cp -r ${path.module}/lambda_source/* ${path.module}/lambda/"
-#   }
-# }
