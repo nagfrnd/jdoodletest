@@ -1,6 +1,6 @@
 provider "aws" {
   region = var.aws_region
-  profile = "default"
+  profile = "" # update the profile accordingly
 }
 
 provider "null" {
@@ -30,7 +30,7 @@ resource "aws_launch_configuration" "newdeploy" {
   image_id = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
   key_name = "newdeploy"  
-  security_groups = ["sg-0447f716de2d3907c"]
+  security_groups = [""] # Please update the Security Group
 
 
   lifecycle {
